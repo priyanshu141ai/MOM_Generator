@@ -107,7 +107,7 @@ document.getElementById("recordBtn").onclick = async () => {
 };
 document.getElementById("transcribeBtn").onclick = async () => {
   if (!selectedId) return alert("Select a meeting first.");
-  await api(`/meetings/${selectedId}/transcribe?model_size=tiny`, {method:"POST"});
+  await api(`/meetings/${selectedId}/transcribe`, {method:"POST"});
   await openMeeting(selectedId);
   loadMeetings();
 };
@@ -128,7 +128,7 @@ document.getElementById("audioInput").onchange = async (e) => {
   const data = new FormData();
   data.append("file", e.target.files[0]);
   try {
-    selectedMeeting = await api(`/meetings/${selectedId}/upload-audio?model_size=tiny`, {method:"POST", body:data});
+    selectedMeeting = await api(`/meetings/${selectedId}/upload-audio`, {method:"POST", body:data});
     activeTab = "mom";
     renderDetail();
     loadMeetings();

@@ -77,7 +77,22 @@ HF_TOKEN="hf_xxx"
 Run:
 
 ```http
-POST /meetings/{id}/diarize?model_size=tiny
+POST /meetings/{id}/diarize?model_size=small
+```
+
+## Transcription accuracy
+
+Default pipeline:
+
+- FFmpeg preprocessing: mono 16 kHz, high-pass, low-pass, loudness normalization
+- `faster-whisper` with `small`, English, beam search
+- VAD first, automatic no-VAD retry if empty
+
+Override per request:
+
+```http
+POST /meetings/{id}/transcribe?model_size=base&language=en
+POST /meetings/{id}/transcribe?model_size=small&language=en
 ```
 
 ## Login bot Google account

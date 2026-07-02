@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     google_token_file: str = "./google_token.json"
     google_oauth_state_file: str = "./google_oauth_state.txt"
     max_upload_mb: int = 100
+    default_transcribe_model: str = "small"
+    default_transcribe_language: str = "en"
 
     class Config:
         env_file = ".env"

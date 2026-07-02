@@ -23,7 +23,7 @@ def diarize_transcript(path: str, model_size: str = "tiny") -> str:
         speakers.append({"start": turn.start, "end": turn.end, "speaker": speaker})
 
     lines = []
-    for seg in transcribe_segments(path, model_size):
+    for seg in transcribe_segments(path, model_size, language=settings.default_transcribe_language or None):
         label = speaker_for(seg["start"], seg["end"], speakers)
         lines.append(f"{seg['start']:.1f}-{seg['end']:.1f}: {label}: {seg['text']}")
     return "\n".join(lines)

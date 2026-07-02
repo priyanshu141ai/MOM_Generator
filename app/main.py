@@ -172,14 +172,19 @@ def diagnose_join(meeting_id: int, session: Session = Depends(get_session)):
 
 
 @app.post("/meetings/{meeting_id}/transcribe", response_model=Meeting)
-def transcribe_meeting(meeting_id: int, model_size: str = "tiny", session: Session = Depends(get_session)):
+def transcribe_meeting(
+    meeting_id: int,
+    model_size: str | None = None,
+    language: str | None = None,
+    session: Session = Depends(get_session),
+):
     meeting = session.get(Meeting, meeting_id)
     if not meeting:
         raise HTTPException(404, "Meeting not found")
     if not meeting.recording_path:
         raise HTTPException(400, "No recording found")
 
-    meeting.transcript = transcribe_audio(meeting.recording_path, model_size)
+    meeting.transcript = transcribe_audio(meeting.recording_path, model_size, language)
     meeting.mom = generate_mom(meeting.title, meeting.transcript)
     meeting.status = "mom_ready"
     session.add(meeting)
@@ -211,7 +216,8 @@ def diarize_meeting(meeting_id: int, model_size: str = "tiny", session: Session 
 async def upload_audio(
     meeting_id: int,
     file: UploadFile = File(...),
-    model_size: str = "tiny",
+    model_size: str | None = None,
+    language: str | None = None,
     session: Session = Depends(get_session),
 ):
     meeting = session.get(Meeting, meeting_id)
@@ -231,7 +237,7 @@ async def upload_audio(
     path.write_bytes(content)
 
     meeting.recording_path = str(path)
-    meeting.transcript = transcribe_audio(str(path), model_size)
+    meeting.transcript = transcribe_audio(str(path), model_size, language)
     meeting.mom = generate_mom(meeting.title, meeting.transcript)
     meeting.status = "mom_ready"
     session.add(meeting)
