@@ -67,6 +67,17 @@ document.getElementById("transcribeBtn").onclick = async () => {
   await openMeeting(selectedId);
   loadMeetings();
 };
+document.getElementById("diarizeBtn").onclick = async () => {
+  if (!selectedId) return alert("Select a meeting first.");
+  try {
+    selectedMeeting = await api(`/meetings/${selectedId}/diarize?model_size=tiny`, {method:"POST"});
+    activeTab = "transcript";
+    renderDetail();
+    loadMeetings();
+  } catch (e) {
+    alert(e.message);
+  }
+};
 document.getElementById("audioInput").onchange = async (e) => {
   if (!selectedId) return alert("Select a meeting first.");
   if (!e.target.files.length) return;

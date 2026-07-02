@@ -66,6 +66,20 @@ Test:
 POST /email/test?to=your@gmail.com
 ```
 
+## Speaker diarization
+
+Create a Hugging Face token and accept access for `pyannote/speaker-diarization-3.1`, then set:
+
+```env
+HF_TOKEN="hf_xxx"
+```
+
+Run:
+
+```http
+POST /meetings/{id}/diarize?model_size=tiny
+```
+
 ## Login bot Google account
 
 Do not save Google password in code. Run:

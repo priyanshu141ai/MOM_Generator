@@ -8,6 +8,7 @@ from sqlmodel import Session, select
 from app.config import settings
 from app.db import get_session, init_db
 from app.emailer import is_configured, send_mail
+from app.diarizer import diarize_transcript
 from app.models import Meeting, MeetingCreate, TranscriptIn
 from app.mom import generate_mom
 from app.bots.runner import run_meeting_bot
@@ -129,6 +130,25 @@ def transcribe_meeting(meeting_id: int, model_size: str = "tiny", session: Sessi
         raise HTTPException(400, "No recording found")
 
     meeting.transcript = transcribe_audio(meeting.recording_path, model_size)
+    meeting.mom = generate_mom(meeting.title, meeting.transcript)
+    meeting.status = "mom_ready"
+    session.add(meeting)
+    session.commit()
+    session.refresh(meeting)
+    return meeting
+
+
+@app.post("/meetings/{meeting_id}/diarize", response_model=Meeting)
+def diarize_meeting(meeting_id: int, model_size: str = "tiny", session: Session = Depends(get_session)):
+    meeting = session.get(Meeting, meeting_id)
+    if not meeting:
+        raise HTTPException(404, "Meeting not found")
+    if not meeting.recording_path:
+        raise HTTPException(400, "No recording found")
+    try:
+        meeting.transcript = diarize_transcript(meeting.recording_path, model_size)
+    except RuntimeError as exc:
+        raise HTTPException(400, str(exc))
     meeting.mom = generate_mom(meeting.title, meeting.transcript)
     meeting.status = "mom_ready"
     session.add(meeting)
