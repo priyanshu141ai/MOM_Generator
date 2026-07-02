@@ -1,4 +1,6 @@
 let selectedId = null;
+let selectedMeeting = null;
+let activeTab = "mom";
 
 async function api(path, opts) {
   const res = await fetch(path, opts);
@@ -21,9 +23,16 @@ async function loadMeetings() {
 
 async function openMeeting(id) {
   selectedId = id;
-  const m = await api(`/meetings/${id}`);
+  selectedMeeting = await api(`/meetings/${id}`);
+  const m = selectedMeeting;
   document.getElementById("detailTitle").textContent = `MOM: ${m.title}`;
-  document.getElementById("momBox").textContent = m.mom || "MOM not generated yet.";
+  renderDetail();
+}
+
+function renderDetail() {
+  if (!selectedMeeting) return;
+  const text = activeTab === "mom" ? selectedMeeting.mom : selectedMeeting.transcript;
+  document.getElementById("momBox").textContent = text || `${activeTab} not generated yet.`;
 }
 
 document.getElementById("meetingForm").onsubmit = async (e) => {
@@ -58,5 +67,23 @@ document.getElementById("transcribeBtn").onclick = async () => {
   await openMeeting(selectedId);
   loadMeetings();
 };
+document.getElementById("audioInput").onchange = async (e) => {
+  if (!selectedId) return alert("Select a meeting first.");
+  if (!e.target.files.length) return;
+  const data = new FormData();
+  data.append("file", e.target.files[0]);
+  selectedMeeting = await api(`/meetings/${selectedId}/upload-audio?model_size=tiny`, {method:"POST", body:data});
+  activeTab = "mom";
+  renderDetail();
+  loadMeetings();
+};
+document.querySelectorAll(".tabs button").forEach((btn) => {
+  btn.onclick = () => {
+    document.querySelectorAll(".tabs button").forEach((x) => x.classList.remove("active"));
+    btn.classList.add("active");
+    activeTab = btn.dataset.tab;
+    renderDetail();
+  };
+});
 
 loadMeetings();

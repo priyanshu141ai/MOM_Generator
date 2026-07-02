@@ -1,4 +1,6 @@
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException
+from pathlib import Path
+
+from fastapi import BackgroundTasks, Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select
@@ -127,6 +129,32 @@ def transcribe_meeting(meeting_id: int, model_size: str = "tiny", session: Sessi
         raise HTTPException(400, "No recording found")
 
     meeting.transcript = transcribe_audio(meeting.recording_path, model_size)
+    meeting.mom = generate_mom(meeting.title, meeting.transcript)
+    meeting.status = "mom_ready"
+    session.add(meeting)
+    session.commit()
+    session.refresh(meeting)
+    return meeting
+
+
+@app.post("/meetings/{meeting_id}/upload-audio", response_model=Meeting)
+async def upload_audio(
+    meeting_id: int,
+    file: UploadFile = File(...),
+    model_size: str = "tiny",
+    session: Session = Depends(get_session),
+):
+    meeting = session.get(Meeting, meeting_id)
+    if not meeting:
+        raise HTTPException(404, "Meeting not found")
+
+    Path(settings.recordings_dir).mkdir(parents=True, exist_ok=True)
+    suffix = Path(file.filename or "audio.wav").suffix or ".wav"
+    path = Path(settings.recordings_dir) / f"meeting_{meeting_id}_upload{suffix}"
+    path.write_bytes(await file.read())
+
+    meeting.recording_path = str(path)
+    meeting.transcript = transcribe_audio(str(path), model_size)
     meeting.mom = generate_mom(meeting.title, meeting.transcript)
     meeting.status = "mom_ready"
     session.add(meeting)
