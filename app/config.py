@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     bot_browser_channel: str = "chrome"
     bot_chrome_profile_directory: str = ""
     bot_cdp_url: str = ""
+    bot_debug_dir: str = "./bot-debug"
 
     class Config:
         env_file = ".env"

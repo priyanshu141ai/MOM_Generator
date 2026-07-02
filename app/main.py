@@ -13,6 +13,7 @@ from app.models import Meeting, MeetingCreate, TranscriptIn
 from app.mom import generate_mom
 from app.bots.runner import run_meeting_bot
 from app.bots.recorder import list_audio_devices
+from app.bots.cdp import cdp_status
 from app.scheduler import schedule_due_meetings
 from app.transcriber import transcribe_audio
 
@@ -119,6 +120,11 @@ def run_due_calendar(background: BackgroundTasks, window_min: int = 5, session: 
 @app.get("/audio-devices")
 def audio_devices():
     return {"ffmpeg_output": list_audio_devices()}
+
+
+@app.get("/bot/browser-status")
+def bot_browser_status():
+    return cdp_status()
 
 
 @app.post("/meetings/{meeting_id}/transcribe", response_model=Meeting)

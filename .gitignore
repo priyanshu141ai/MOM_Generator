@@ -8,3 +8,4 @@ browser-profile/
 node_modules/
 playwright-report/
 test-results/
+bot-debug/

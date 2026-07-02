@@ -89,3 +89,29 @@ python scripts/login_google.py
 ```
 
 Login manually in opened browser. Close it after login. The bot reuses `./browser-profile`.
+
+## Reliable Google Meet mode
+
+Start normal Chrome with remote debugging and the profile where the bot Google account is signed in:
+
+```powershell
+.\scripts\start_chrome_debug.ps1 "Profile 2"
+```
+
+Check:
+
+```http
+GET /bot/browser-status
+```
+
+Expected:
+
+```json
+{"configured": true, "ok": true}
+```
+
+If Meet blocks join, inspect:
+
+```text
+bot-debug/last_meet.png
+```
