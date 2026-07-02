@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MOM Bot</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <aside>
+    <h1>MOM Bot</h1>
+    <nav><button class="active">Meetings</button><button>Calendar</button><button>Email</button></nav>
+  </aside>
+  <main>
+    <header><div><h2>Meetings</h2><p>Record, transcribe, generate MOM, and email follow-ups.</p></div><div><button id="dueBtn">Run Due</button><a href="/docs">API Docs</a></div></header>
+    <section class="grid">
+      <form id="meetingForm">
+        <h3>New meeting</h3>
+        <input name="title" placeholder="Title" required>
+        <select name="platform"><option value="google_meet">Google Meet</option><option value="zoom">Zoom</option><option value="teams">Teams</option></select>
+        <input name="meeting_url" placeholder="Meeting URL" required>
+        <input name="recipient_email" type="email" placeholder="Recipient email" required>
+        <input name="starts_at" type="datetime-local">
+        <button>Create</button>
+      </form>
+      <section class="panel">
+        <div class="panelTop"><h3>Meetings</h3><button id="refreshBtn">Refresh</button></div>
+        <table><thead><tr><th>ID</th><th>Title</th><th>Platform</th><th>Status</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+      </section>
+    </section>
+    <section class="detail">
+      <div class="panelTop"><h3 id="detailTitle">MOM</h3><div><button id="recordBtn">Record</button><button id="transcribeBtn">Transcribe</button><button id="sendBtn">Send Email</button></div></div>
+      <pre id="momBox">Select a meeting.</pre>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

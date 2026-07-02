@@ -1,4 +1,6 @@
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select
 
 from app.db import get_session, init_db
@@ -7,9 +9,11 @@ from app.models import Meeting, MeetingCreate, TranscriptIn
 from app.mom import generate_mom
 from app.bots.runner import run_meeting_bot
 from app.bots.recorder import list_audio_devices
+from app.scheduler import schedule_due_meetings
 from app.transcriber import transcribe_audio
 
 app = FastAPI(title="MOM Bot Backend")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.on_event("startup")
@@ -20,6 +24,11 @@ def on_startup():
 @app.get("/health")
 def health():
     return {"ok": True}
+
+
+@app.get("/", include_in_schema=False)
+def dashboard():
+    return FileResponse("static/index.html")
 
 
 @app.post("/meetings", response_model=Meeting)
@@ -62,10 +71,29 @@ def add_transcript(meeting_id: int, data: TranscriptIn, session: Session = Depen
     return meeting
 
 
+@app.post("/meetings/{meeting_id}/send-mom")
+def send_meeting_mom(meeting_id: int, session: Session = Depends(get_session)):
+    meeting = session.get(Meeting, meeting_id)
+    if not meeting:
+        raise HTTPException(404, "Meeting not found")
+    if not meeting.mom:
+        raise HTTPException(400, "MOM not generated yet")
+    sent = send_mail(meeting.recipient_email, f"MOM: {meeting.title}", meeting.mom)
+    if not sent:
+        raise HTTPException(400, "SMTP not configured")
+    return {"ok": True, "sent_to": meeting.recipient_email}
+
+
 @app.post("/meetings/{meeting_id}/record")
 def record_meeting(meeting_id: int, background: BackgroundTasks, duration_sec: int = 60):
     background.add_task(run_meeting_bot, meeting_id, duration_sec)
     return {"ok": True, "meeting_id": meeting_id, "status": "recording_started"}
+
+
+@app.post("/calendar/run-due")
+def run_due_calendar(background: BackgroundTasks, window_min: int = 5, session: Session = Depends(get_session)):
+    count = schedule_due_meetings(session, background, window_min)
+    return {"ok": True, "queued": count}
 
 
 @app.get("/audio-devices")
