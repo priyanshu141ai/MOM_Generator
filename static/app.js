@@ -4,21 +4,48 @@ let activeTab = "mom";
 
 async function api(path, opts) {
   const res = await fetch(path, opts);
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) {
+    const text = await res.text();
+    let message = text;
+    try {
+      const payload = JSON.parse(text);
+      message = payload.detail || text;
+    } catch {
+    }
+    throw new Error(message);
+  }
   return res.json();
 }
 
 async function loadMeetings() {
   const rows = document.getElementById("rows");
-  rows.innerHTML = "";
+  rows.replaceChildren();
   const meetings = await api("/meetings");
   for (const m of meetings) {
     const tr = document.createElement("tr");
     const status = m.status.length > 24 ? `${m.status.slice(0, 24)}...` : m.status;
-    tr.innerHTML = `<td>${m.id}</td><td>${m.title}</td><td>${m.platform}</td><td><span class="chip" title="${m.status}">${status}</span></td><td><button class="rowBtn">Open</button></td>`;
-    tr.querySelector("button").onclick = () => openMeeting(m.id);
+    addCell(tr, m.id);
+    addCell(tr, m.title);
+    addCell(tr, m.platform);
+    const statusCell = tr.insertCell();
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    chip.title = m.status;
+    chip.textContent = status;
+    statusCell.appendChild(chip);
+    const actionCell = tr.insertCell();
+    const button = document.createElement("button");
+    button.className = "rowBtn";
+    button.textContent = "Open";
+    button.onclick = () => openMeeting(m.id);
+    actionCell.appendChild(button);
     rows.appendChild(tr);
   }
+}
+
+function addCell(row, value) {
+  const td = row.insertCell();
+  td.textContent = value ?? "";
 }
 
 async function openMeeting(id) {
@@ -51,13 +78,21 @@ document.getElementById("dueBtn").onclick = async () => {
   loadMeetings();
 };
 document.getElementById("calendarBtn").onclick = async () => {
-  const r = await api("/calendar/google/auth-url");
-  location.href = r.auth_url;
+  try {
+    const r = await api("/calendar/google/auth-url");
+    location.href = r.auth_url;
+  } catch (e) {
+    alert(e.message);
+  }
 };
 document.getElementById("importBtn").onclick = async () => {
-  const r = await api("/calendar/google/import?days=7", {method:"POST"});
-  alert(`Imported ${r.created} meeting(s).`);
-  loadMeetings();
+  try {
+    const r = await api("/calendar/google/import?days=7", {method:"POST"});
+    alert(`Imported ${r.created} meeting(s).`);
+    loadMeetings();
+  } catch (e) {
+    alert(e.message);
+  }
 };
 document.getElementById("sendBtn").onclick = async () => {
   if (!selectedId) return alert("Select a meeting first.");
@@ -92,10 +127,16 @@ document.getElementById("audioInput").onchange = async (e) => {
   if (!e.target.files.length) return;
   const data = new FormData();
   data.append("file", e.target.files[0]);
-  selectedMeeting = await api(`/meetings/${selectedId}/upload-audio?model_size=tiny`, {method:"POST", body:data});
-  activeTab = "mom";
-  renderDetail();
-  loadMeetings();
+  try {
+    selectedMeeting = await api(`/meetings/${selectedId}/upload-audio?model_size=tiny`, {method:"POST", body:data});
+    activeTab = "mom";
+    renderDetail();
+    loadMeetings();
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    e.target.value = "";
+  }
 };
 document.querySelectorAll(".tabs button").forEach((btn) => {
   btn.onclick = () => {

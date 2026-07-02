@@ -9,6 +9,7 @@ from app.models import Meeting, Platform
 
 
 def run_meeting_bot(meeting_id: int, duration_sec: int = 60):
+    duration_sec = max(5, min(duration_sec, 4 * 60 * 60))
     with Session(engine) as session:
         meeting = session.get(Meeting, meeting_id)
         if not meeting:

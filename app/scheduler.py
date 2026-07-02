@@ -4,7 +4,7 @@ from fastapi import BackgroundTasks
 from sqlmodel import Session, select
 
 from app.bots.runner import run_meeting_bot
-from app.models import Meeting
+from app.models import Meeting, Platform
 
 
 def schedule_due_meetings(session: Session, background: BackgroundTasks, window_min: int = 5) -> int:
@@ -17,6 +17,7 @@ def schedule_due_meetings(session: Session, background: BackgroundTasks, window_
             Meeting.starts_at >= since,
             Meeting.starts_at <= until,
             Meeting.status == "created",
+            Meeting.platform == Platform.google_meet,
         )
     ).all()
     for meeting in rows:

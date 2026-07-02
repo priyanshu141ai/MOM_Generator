@@ -132,9 +132,9 @@ def google_calendar_auth_url():
 
 
 @app.get("/calendar/google/callback")
-def google_calendar_callback(code: str):
+def google_calendar_callback(code: str, state: str):
     try:
-        save_callback_token(code)
+        save_callback_token(code, state)
     except RuntimeError as exc:
         raise HTTPException(400, str(exc))
     return {"ok": True, "message": "Google Calendar connected"}
@@ -206,10 +206,17 @@ async def upload_audio(
     if not meeting:
         raise HTTPException(404, "Meeting not found")
 
-    Path(settings.recordings_dir).mkdir(parents=True, exist_ok=True)
+    allowed = {".wav", ".mp3", ".m4a", ".mp4", ".webm", ".ogg", ".flac"}
     suffix = Path(file.filename or "audio.wav").suffix or ".wav"
+    if suffix.lower() not in allowed:
+        raise HTTPException(400, f"Unsupported file type: {suffix}")
+    content = await file.read()
+    if len(content) > settings.max_upload_mb * 1024 * 1024:
+        raise HTTPException(413, f"File too large. Max {settings.max_upload_mb} MB")
+
+    Path(settings.recordings_dir).mkdir(parents=True, exist_ok=True)
     path = Path(settings.recordings_dir) / f"meeting_{meeting_id}_upload{suffix}"
-    path.write_bytes(await file.read())
+    path.write_bytes(content)
 
     meeting.recording_path = str(path)
     meeting.transcript = transcribe_audio(str(path), model_size)

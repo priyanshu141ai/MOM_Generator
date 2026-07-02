@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     google_client_secret: str = ""
     google_redirect_uri: str = "http://127.0.0.1:8001/calendar/google/callback"
     google_token_file: str = "./google_token.json"
+    google_oauth_state_file: str = "./google_oauth_state.txt"
+    max_upload_mb: int = 100
 
     class Config:
         env_file = ".env"

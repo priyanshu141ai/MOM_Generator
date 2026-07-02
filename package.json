@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "Free/local-first FastAPI backend for meeting MOM generation.",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "test": "playwright test -c playwright.config.ts --project=chromium"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
