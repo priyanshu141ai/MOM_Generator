@@ -94,7 +94,8 @@ async def drive_meet_page(page, url: str, duration_sec: int):
         pass
     await page.wait_for_timeout(2500)
     await dismiss_prejoin(page)
-    clicked = await click_first(page, ["Ask to join", "Join now", "Continue", "Continue without microphone and camera"])
+    await click_if_visible(page, "Got it", timeout=1500)
+    clicked = await click_first(page, ["Switch here", "Ask to join", "Join now", "Continue", "Continue without microphone and camera"])
     await page.wait_for_timeout(2500)
     await save_debug(page)
     body = await page.locator("body").inner_text(timeout=3000)
@@ -161,7 +162,7 @@ def meet_state(text: str) -> str:
         "please wait until a meeting host brings you into the call",
     ]):
         return "waiting_for_admission"
-    if any(x in lower for x in ["ask to join", "join now", "ready to join"]):
+    if any(x in lower for x in ["switch here", "ask to join", "join now", "ready to join"]):
         return "prejoin"
     if any(x in lower for x in ["leave call", "meeting details", "people", "chat with everyone"]):
         return "joined_or_in_call_ui"
