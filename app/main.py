@@ -15,6 +15,7 @@ from app.mom import generate_mom
 from app.bots.runner import run_meeting_bot
 from app.bots.recorder import list_audio_devices
 from app.bots.cdp import cdp_status
+from app.bots.google_meet import diagnose_google_meet
 from app.scheduler import schedule_due_meetings
 from app.transcriber import transcribe_audio
 
@@ -157,6 +158,17 @@ def audio_devices():
 @app.get("/bot/browser-status")
 def bot_browser_status():
     return cdp_status()
+
+
+@app.post("/meetings/{meeting_id}/diagnose-join")
+def diagnose_join(meeting_id: int, session: Session = Depends(get_session)):
+    meeting = session.get(Meeting, meeting_id)
+    if not meeting:
+        raise HTTPException(404, "Meeting not found")
+    try:
+        return __import__("asyncio").run(diagnose_google_meet(meeting.meeting_url))
+    except RuntimeError as exc:
+        raise HTTPException(400, str(exc))
 
 
 @app.post("/meetings/{meeting_id}/transcribe", response_model=Meeting)

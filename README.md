@@ -116,6 +116,14 @@ If Meet blocks join, inspect:
 bot-debug/last_meet.png
 ```
 
+Join diagnostics:
+
+```http
+POST /meetings/{id}/diagnose-join
+```
+
+If status says the bot is waiting for host admission, open the meeting as host and click **Admit** for `botkumar901@gmail.com`, or add that account to the Calendar invite before the meeting.
+
 ## Google Calendar sync
 
 Create a Google OAuth client and add this redirect URI:
