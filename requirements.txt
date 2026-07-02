@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+sqlmodel
+pydantic-settings
+python-multipart
+jinja2
+playwright
+imageio-ffmpeg
+faster-whisper
