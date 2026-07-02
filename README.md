@@ -47,6 +47,25 @@ POST /meetings/{id}/record?duration_sec=60
 
 Note: Windows audio device name must match FFmpeg dshow device.
 
+## Email setup
+
+For Gmail, create an App Password, then set:
+
+```env
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT=587
+SMTP_USER="your@gmail.com"
+SMTP_PASSWORD="your-16-character-app-password"
+MAIL_FROM="your@gmail.com"
+MAIL_TEST_TO="your@gmail.com"
+```
+
+Test:
+
+```http
+POST /email/test?to=your@gmail.com
+```
+
 ## Login bot Google account
 
 Do not save Google password in code. Run:

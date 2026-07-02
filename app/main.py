@@ -3,8 +3,9 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select
 
+from app.config import settings
 from app.db import get_session, init_db
-from app.emailer import send_mail
+from app.emailer import is_configured, send_mail
 from app.models import Meeting, MeetingCreate, TranscriptIn
 from app.mom import generate_mom
 from app.bots.runner import run_meeting_bot
@@ -24,6 +25,22 @@ def on_startup():
 @app.get("/health")
 def health():
     return {"ok": True}
+
+
+@app.get("/email/status")
+def email_status():
+    return {"configured": is_configured(), "mail_from": settings.mail_from or None}
+
+
+@app.post("/email/test")
+def email_test(to: str | None = None):
+    target = to or settings.mail_test_to
+    if not target:
+        raise HTTPException(400, "Provide ?to=email or set MAIL_TEST_TO")
+    sent = send_mail(target, "MOM Bot email test", "Email setup is working.")
+    if not sent:
+        raise HTTPException(400, "SMTP not configured")
+    return {"ok": True, "sent_to": target}
 
 
 @app.get("/", include_in_schema=False)

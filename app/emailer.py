@@ -5,7 +5,7 @@ from app.config import settings
 
 
 def send_mail(to: str, subject: str, body: str):
-    if not settings.smtp_host or not settings.mail_from:
+    if not is_configured():
         return False
 
     msg = EmailMessage()
@@ -21,6 +21,12 @@ def send_mail(to: str, subject: str, body: str):
             smtp.login(settings.smtp_user, settings.smtp_password)
         smtp.send_message(msg)
     return True
+
+
+def is_configured() -> bool:
+    if not settings.smtp_host or not settings.mail_from:
+        return False
+    return not settings.smtp_user or bool(settings.smtp_password)
 
 
 def markdown_to_html(text: str) -> str:

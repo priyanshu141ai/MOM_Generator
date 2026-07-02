@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     smtp_user: str = ""
     smtp_password: str = ""
     mail_from: str = ""
+    mail_test_to: str = ""
     bot_display_name: str = "MOM Recorder Bot"
     recordings_dir: str = "./recordings"
     ffmpeg_bin: str = "ffmpeg"
