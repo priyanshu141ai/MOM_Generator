@@ -9,3 +9,4 @@ node_modules/
 playwright-report/
 test-results/
 bot-debug/
+google_token.json

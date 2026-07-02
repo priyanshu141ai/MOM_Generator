@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select
 
 from app.config import settings
+from app.calendar_google import auth_url, google_configured, import_google_meetings, save_callback_token
 from app.db import get_session, init_db
 from app.emailer import is_configured, send_mail
 from app.diarizer import diarize_transcript
@@ -115,6 +116,37 @@ def record_meeting(meeting_id: int, background: BackgroundTasks, duration_sec: i
 def run_due_calendar(background: BackgroundTasks, window_min: int = 5, session: Session = Depends(get_session)):
     count = schedule_due_meetings(session, background, window_min)
     return {"ok": True, "queued": count}
+
+
+@app.get("/calendar/google/status")
+def google_calendar_status():
+    return {"configured": google_configured(), "token_file": Path(settings.google_token_file).exists()}
+
+
+@app.get("/calendar/google/auth-url")
+def google_calendar_auth_url():
+    try:
+        return {"auth_url": auth_url()}
+    except RuntimeError as exc:
+        raise HTTPException(400, str(exc))
+
+
+@app.get("/calendar/google/callback")
+def google_calendar_callback(code: str):
+    try:
+        save_callback_token(code)
+    except RuntimeError as exc:
+        raise HTTPException(400, str(exc))
+    return {"ok": True, "message": "Google Calendar connected"}
+
+
+@app.post("/calendar/google/import")
+def google_calendar_import(days: int = 7, session: Session = Depends(get_session)):
+    try:
+        created = import_google_meetings(session, days)
+    except RuntimeError as exc:
+        raise HTTPException(400, str(exc))
+    return {"ok": True, "created": created}
 
 
 @app.get("/audio-devices")

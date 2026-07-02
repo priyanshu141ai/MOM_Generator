@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     bot_chrome_profile_directory: str = ""
     bot_cdp_url: str = ""
     bot_debug_dir: str = "./bot-debug"
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    google_redirect_uri: str = "http://127.0.0.1:8001/calendar/google/callback"
+    google_token_file: str = "./google_token.json"
 
     class Config:
         env_file = ".env"

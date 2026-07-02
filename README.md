@@ -115,3 +115,28 @@ If Meet blocks join, inspect:
 ```text
 bot-debug/last_meet.png
 ```
+
+## Google Calendar sync
+
+Create a Google OAuth client and add this redirect URI:
+
+```text
+http://127.0.0.1:8001/calendar/google/callback
+```
+
+Set:
+
+```env
+GOOGLE_CLIENT_ID="..."
+GOOGLE_CLIENT_SECRET="..."
+GOOGLE_REDIRECT_URI="http://127.0.0.1:8001/calendar/google/callback"
+```
+
+Flow:
+
+```http
+GET /calendar/google/auth-url
+GET /calendar/google/status
+POST /calendar/google/import?days=7
+POST /calendar/run-due?window_min=5
+```

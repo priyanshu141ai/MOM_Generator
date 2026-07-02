@@ -50,6 +50,15 @@ document.getElementById("dueBtn").onclick = async () => {
   alert(`Queued ${r.queued} meeting(s).`);
   loadMeetings();
 };
+document.getElementById("calendarBtn").onclick = async () => {
+  const r = await api("/calendar/google/auth-url");
+  location.href = r.auth_url;
+};
+document.getElementById("importBtn").onclick = async () => {
+  const r = await api("/calendar/google/import?days=7", {method:"POST"});
+  alert(`Imported ${r.created} meeting(s).`);
+  loadMeetings();
+};
 document.getElementById("sendBtn").onclick = async () => {
   if (!selectedId) return alert("Select a meeting first.");
   await api(`/meetings/${selectedId}/send-mom`, {method:"POST"});
