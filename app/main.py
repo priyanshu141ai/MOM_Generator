@@ -302,3 +302,20 @@ def rename_speaker(meeting_id: int, data: RenameSpeakerIn, session: Session = De
     return meeting
 
 
+class UpdateMomIn(SQLModel):
+    mom: str
+
+
+@app.post("/meetings/{meeting_id}/mom", response_model=Meeting)
+def update_meeting_mom(meeting_id: int, data: UpdateMomIn, session: Session = Depends(get_session)):
+    meeting = session.get(Meeting, meeting_id)
+    if not meeting:
+        raise HTTPException(404, "Meeting not found")
+    meeting.mom = data.mom
+    session.add(meeting)
+    session.commit()
+    session.refresh(meeting)
+    return meeting
+
+
+

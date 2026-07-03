@@ -180,6 +180,35 @@ function renderTabs() {
     const momBox = document.getElementById("momBox");
     if (selectedMeeting.mom) {
       momBox.innerHTML = formatMarkdown(selectedMeeting.mom);
+      
+      // Bind interactive checkbox clicks
+      momBox.querySelectorAll(".task-checkbox").forEach(chk => {
+        chk.onchange = async () => {
+          const lineIndex = parseInt(chk.dataset.line);
+          const lines = selectedMeeting.mom.split('\n');
+          const isChecked = chk.checked;
+          
+          if (isChecked) {
+            lines[lineIndex] = lines[lineIndex].replace(/\[ \]/, '[x]');
+          } else {
+            lines[lineIndex] = lines[lineIndex].replace(/\[[xX]\]/, '[ ]');
+          }
+          
+          const newMom = lines.join('\n');
+          try {
+            selectedMeeting = await api(`/meetings/${selectedId}/mom`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ mom: newMom })
+            });
+            renderTabs();
+          } catch (e) {
+            alert("Failed to update task: " + e.message);
+            chk.checked = !isChecked; // Revert checkbox in case of error
+          }
+        };
+      });
+      
     } else {
       momBox.textContent = "MOM summary not generated yet. Click Transcribe or Diarize.";
     }
@@ -336,15 +365,36 @@ function formatTime(sec) {
 }
 
 function formatMarkdown(text) {
-  return text
-    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-    .replace(/^\s*-\s*(.*$)/gim, '<li>$1</li>')
-    .replace(/(<li>.*<\/li>)/gim, '<ul>$1</ul>')
-    .replace(/<\/ul>\s*<ul>/gim, '')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, '<br>');
+  const lines = text.split('\n');
+  const result = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Checklist checkbox parsing
+    const checkboxRegex = /^\s*-\s*\[([ xX])\]\s*(.*)$/;
+    const checkboxMatch = line.match(checkboxRegex);
+    if (checkboxMatch) {
+      const isChecked = checkboxMatch[1].toLowerCase() === 'x';
+      const taskText = checkboxMatch[2];
+      result.push(`<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 14px;">
+        <input type="checkbox" class="task-checkbox" data-line="${i}" ${isChecked ? 'checked' : ''} style="width: 16px; height: 16px; margin: 0; cursor: pointer;">
+        <span style="${isChecked ? 'text-decoration: line-through; color: var(--text-muted);' : ''}">${taskText}</span>
+      </div>`);
+      continue;
+    }
+    
+    let parsedLine = line
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^\s*-\s*(.*$)/gim, '<li>$1</li>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      
+    result.push(parsedLine);
+  }
+  
+  return result.join('<br>');
 }
 
 // Wiring Tabs Click

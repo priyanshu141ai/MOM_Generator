@@ -158,6 +158,24 @@ class TestBackend(unittest.TestCase):
         self.assertEqual(data[0]["id"], m2["id"])
         self.assertIn("issues", data[0]["snippet"].lower())
 
+    def test_update_mom(self):
+        payload = {
+            "title": "Design Kickoff",
+            "platform": "google_meet",
+            "meeting_url": "https://meet.google.com/xyz-pdq-abc",
+            "recipient_email": "test@example.com"
+        }
+        m_id = self.client.post("/meetings", json=payload).json()["id"]
+
+        update_payload = {
+            "mom": "# MOM\n- [ ] Task 1\n- [x] Task 2"
+        }
+        res = self.client.post(f"/meetings/{m_id}/mom", json=update_payload)
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["mom"], "# MOM\n- [ ] Task 1\n- [x] Task 2")
+
 
 if __name__ == "__main__":
     unittest.main()
+

@@ -19,7 +19,7 @@ def generate_mom(title: str, transcript: str) -> str:
                 f"for the meeting titled '{title}'. Use markdown formatting. Provide the following sections:\n"
                 f"1. Overview & Summary (a nice narrative of the meeting)\n"
                 f"2. Key Decisions (bullet points of agreed items)\n"
-                f"3. Action Items (formatted as: - Owner: [Name] | Task: [Task] | Due: [Date])\n"
+                f"3. Action Items (formatted strictly as: - [ ] Owner: [Name] | Task: [Task] | Due: [Date])\n"
                 f"4. Risks & Blockers (any concerns raised)\n"
                 f"5. Follow-ups (topics to verify or clarify later)\n\n"
                 f"Meeting Transcript:\n{transcript}"
@@ -45,6 +45,7 @@ def generate_mom(title: str, transcript: str) -> str:
     risks = pick(utterances, r"\b(risk|blocker|blocked|issue|problem|delay|concern|dependency)\b")
     followups = pick(utterances, r"\b(check|confirm|clarify|follow up|verify|review)\b")
     actions = action_items(utterances)
+    action_checklist = [f"[ ] {x}" for x in actions]
 
     return f"""# MOM: {title}
 
@@ -58,7 +59,7 @@ def generate_mom(title: str, transcript: str) -> str:
 {bullet(decisions[:8])}
 
 ## Action Items
-{bullet(actions[:12])}
+{bullet(action_checklist[:12])}
 
 ## Risks / Blockers
 {bullet(risks[:8])}
