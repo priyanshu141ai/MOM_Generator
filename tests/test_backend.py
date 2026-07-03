@@ -5,8 +5,11 @@ from app.main import app
 from app.db import get_session
 from app.models import Meeting, Platform
 
-# Use in-memory SQLite database for testing
-test_engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+import os
+
+# Use local temp SQLite database for testing
+test_db_file = "./test_temp.db"
+test_engine = create_engine(f"sqlite:///{test_db_file}", connect_args={"check_same_thread": False})
 
 
 def override_get_session():
@@ -17,6 +20,12 @@ def override_get_session():
 class TestBackend(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        # Remove any leftover test DB
+        if os.path.exists(test_db_file):
+            try:
+                os.remove(test_db_file)
+            except Exception:
+                pass
         SQLModel.metadata.create_all(test_engine)
         app.dependency_overrides[get_session] = override_get_session
         cls.client = TestClient(app)
@@ -24,6 +33,11 @@ class TestBackend(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         SQLModel.metadata.clear()
+        if os.path.exists(test_db_file):
+            try:
+                os.remove(test_db_file)
+            except Exception:
+                pass
 
     def setUp(self):
         # Clear tables before each test
