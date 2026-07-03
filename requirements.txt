@@ -10,3 +10,5 @@ faster-whisper
 pyannote.audio
 google-api-python-client
 google-auth-oauthlib
+httpx
+
