@@ -14,6 +14,7 @@
       <button class="active" id="navMeetings">📂 Meetings</button>
       <button id="navSearch">🔍 Search Copilot</button>
       <button id="navCalendar">📅 Calendar Sync</button>
+      <button id="navInsights">📊 Workspace Insights</button>
     </nav>
   </aside>
   
@@ -189,6 +190,48 @@
           <button id="calendarBtn">🔗 Connect Google Account</button>
           <button id="importBtn" class="secondary">📥 Import Next 7 Days</button>
           <button id="dueBtn" class="secondary">⚡ Run Due Meetings</button>
+        </div>
+      </div>
+    <!-- View 4: Workspace Insights -->
+    <div id="viewInsights" class="view-panel" style="display: none;">
+      <header>
+        <div>
+          <h2>Workspace Insights</h2>
+          <p>Aggregate meeting analytics and performance trends across your workspace.</p>
+        </div>
+      </header>
+      
+      <div class="analytics-summary-grid">
+        <div class="stat-card">
+          <h4>Total Meetings</h4>
+          <div class="stat-value" id="globalTotalMeetings">0</div>
+        </div>
+        <div class="stat-card">
+          <h4>Total Meeting Time</h4>
+          <div class="stat-value" id="globalTotalTime">0m</div>
+        </div>
+        <div class="stat-card">
+          <h4>Avg Speech Speed</h4>
+          <div class="stat-value" id="globalAvgWPM">0 WPM</div>
+        </div>
+        <div class="stat-card">
+          <h4>Avg Filler Words</h4>
+          <div class="stat-value" id="globalAvgFillers">0</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+        <div class="card">
+          <h3 style="color: #a5b4fc; margin-bottom: 16px;">Top Speakers by Talk-Time</h3>
+          <div id="globalSpeakersContainer" style="display: flex; flex-direction: column; gap: 16px;">
+            <!-- Dynamic global speakers bars -->
+          </div>
+        </div>
+        <div class="card">
+          <h3 style="color: #a5b4fc; margin-bottom: 16px;">Filler Word Distribution</h3>
+          <div id="globalFillersContainer" style="display: flex; flex-direction: column; gap: 16px;">
+            <!-- Dynamic filler word bars -->
+          </div>
         </div>
       </div>
     </div>

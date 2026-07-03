@@ -34,12 +34,17 @@ function showView(viewName) {
     document.getElementById("viewCalendar").style.display = "block";
     document.getElementById("navCalendar").classList.add("active");
     loadCalendarStatus();
+  } else if (viewName === "insights") {
+    document.getElementById("viewInsights").style.display = "block";
+    document.getElementById("navInsights").classList.add("active");
+    loadWorkspaceInsights();
   }
 }
 
 document.getElementById("navMeetings").onclick = () => showView("meetings");
 document.getElementById("navSearch").onclick = () => showView("search");
 document.getElementById("navCalendar").onclick = () => showView("calendar");
+document.getElementById("navInsights").onclick = () => showView("insights");
 
 async function loadMeetings() {
   const rows = document.getElementById("rows");
@@ -490,6 +495,122 @@ document.getElementById("dueBtn").onclick = async () => {
   const r = await api("/calendar/run-due", { method: "POST" });
   alert(`Queued ${r.queued} meeting(s).`);
 };
+
+async function loadWorkspaceInsights() {
+  try {
+    const meetings = await api("/meetings");
+    
+    let totalMeetings = meetings.length;
+    let totalDuration = 0;
+    let totalWPM = 0;
+    let meetingsWithWPM = 0;
+    let totalFillers = 0;
+    let meetingsWithFillers = 0;
+    
+    const globalTalkTime = {};
+    const globalFillers = {};
+    
+    meetings.forEach(m => {
+      if (!m.transcript) return;
+      const analytics = computeAnalytics(m.transcript);
+      
+      // Sum duration
+      if (analytics.totalDuration) {
+        totalDuration += analytics.totalDuration;
+      }
+      
+      // Sum global speaker talk time
+      analytics.speakers.forEach(spk => {
+        const dur = analytics.talkTime[spk] || 0;
+        globalTalkTime[spk] = (globalTalkTime[spk] || 0) + dur;
+        
+        const fillers = analytics.fillerCount[spk] || 0;
+        globalFillers[spk] = (globalFillers[spk] || 0) + fillers;
+      });
+      
+      // Aggregate WPM averages
+      let meetingWPMs = Object.values(analytics.speechSpeed).filter(w => w > 0);
+      if (meetingWPMs.length > 0) {
+        const avgMeetingWPM = meetingWPMs.reduce((a, b) => a + b, 0) / meetingWPMs.length;
+        totalWPM += avgMeetingWPM;
+        meetingsWithWPM++;
+      }
+      
+      // Aggregate Filler word totals
+      let meetingFillers = Object.values(analytics.fillerCount).reduce((a, b) => a + b, 0);
+      if (analytics.speakers.length > 0) {
+        totalFillers += meetingFillers;
+        meetingsWithFillers++;
+      }
+    });
+    
+    // Format statistics values
+    document.getElementById("globalTotalMeetings").textContent = totalMeetings;
+    document.getElementById("globalTotalTime").textContent = `${Math.round(totalDuration / 60)}m`;
+    
+    const avgWPM = meetingsWithWPM > 0 ? Math.round(totalWPM / meetingsWithWPM) : 0;
+    document.getElementById("globalAvgWPM").textContent = avgWPM ? `${avgWPM} WPM` : "--";
+    
+    const avgFillers = meetingsWithFillers > 0 ? Math.round(totalFillers / meetingsWithFillers) : 0;
+    document.getElementById("globalAvgFillers").textContent = avgFillers || "--";
+    
+    // Render Top Speakers
+    const spkContainer = document.getElementById("globalSpeakersContainer");
+    spkContainer.replaceChildren();
+    const sortedSpeakers = Object.keys(globalTalkTime).sort((a, b) => globalTalkTime[b] - globalTalkTime[a]);
+    const maxTalkTime = sortedSpeakers.length > 0 ? globalTalkTime[sortedSpeakers[0]] : 1;
+    
+    if (sortedSpeakers.length === 0) {
+      spkContainer.textContent = "No workspace insights available yet.";
+    } else {
+      sortedSpeakers.forEach(spk => {
+        const dur = globalTalkTime[spk];
+        const pct = Math.round((dur / maxTalkTime) * 100);
+        const row = document.createElement("div");
+        row.className = "metric-row";
+        row.innerHTML = `
+          <div class="metric-label-row">
+            <span>${spk}</span>
+            <span>${Math.round(dur / 60)} mins</span>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar" style="width: ${pct}%"></div>
+          </div>
+        `;
+        spkContainer.appendChild(row);
+      });
+    }
+    
+    // Render Filler Word Distribution
+    const fillerContainer = document.getElementById("globalFillersContainer");
+    fillerContainer.replaceChildren();
+    const sortedFillers = Object.keys(globalFillers).sort((a, b) => globalFillers[b] - globalFillers[a]);
+    const maxFillers = sortedFillers.length > 0 ? globalFillers[sortedFillers[0]] : 1;
+    
+    if (sortedFillers.length === 0) {
+      fillerContainer.textContent = "No workspace insights available yet.";
+    } else {
+      sortedFillers.forEach(spk => {
+        const count = globalFillers[spk];
+        const pct = maxFillers > 0 ? Math.round((count / maxFillers) * 100) : 0;
+        const row = document.createElement("div");
+        row.className = "metric-row";
+        row.innerHTML = `
+          <div class="metric-label-row">
+            <span>${spk}</span>
+            <span>${count} times</span>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar" style="width: ${pct}%; background: linear-gradient(90deg, #ef4444, #f59e0b);"></div>
+          </div>
+        `;
+        fillerContainer.appendChild(row);
+      });
+    }
+  } catch (err) {
+    console.error("Error loading insights:", err);
+  }
+}
 
 // Start default view
 showView("meetings");
