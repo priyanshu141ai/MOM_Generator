@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     mail_from: str = ""
     mail_test_to: str = ""
     hf_token: str = ""
+    gemini_api_key: str = ""
     bot_display_name: str = "MOM Recorder Bot"
     recordings_dir: str = "./recordings"
     ffmpeg_bin: str = "ffmpeg"

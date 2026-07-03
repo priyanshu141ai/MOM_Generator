@@ -68,6 +68,38 @@ def list_meetings(session: Session = Depends(get_session)):
     return session.exec(select(Meeting).order_by(Meeting.created_at.desc())).all()
 
 
+@app.get("/meetings/search")
+def search_meetings(q: str, session: Session = Depends(get_session)):
+    if not q.strip():
+        return []
+    meetings = session.exec(
+        select(Meeting).where(
+            (Meeting.title.like(f"%{q}%")) |
+            (Meeting.transcript.like(f"%{q}%")) |
+            (Meeting.mom.like(f"%{q}%"))
+        )
+    ).all()
+    
+    results = []
+    for m in meetings:
+        snippet = ""
+        text_to_search = m.transcript or m.mom or ""
+        idx = text_to_search.lower().find(q.lower())
+        if idx != -1:
+            start = max(0, idx - 40)
+            end = min(len(text_to_search), idx + len(q) + 40)
+            snippet = text_to_search[start:end].replace("\n", " ").strip()
+        else:
+            snippet = m.title
+        results.append({
+            "id": m.id,
+            "title": m.title,
+            "platform": m.platform,
+            "snippet": snippet
+        })
+    return results
+
+
 @app.get("/meetings/{meeting_id}", response_model=Meeting)
 def get_meeting(meeting_id: int, session: Session = Depends(get_session)):
     meeting = session.get(Meeting, meeting_id)
@@ -244,3 +276,29 @@ async def upload_audio(
     session.commit()
     session.refresh(meeting)
     return meeting
+
+
+class RenameSpeakerIn(SQLModel):
+    old_name: str
+    new_name: str
+
+
+@app.post("/meetings/{meeting_id}/rename-speaker", response_model=Meeting)
+def rename_speaker(meeting_id: int, data: RenameSpeakerIn, session: Session = Depends(get_session)):
+    meeting = session.get(Meeting, meeting_id)
+    if not meeting:
+        raise HTTPException(404, "Meeting not found")
+    if not meeting.transcript:
+        raise HTTPException(400, "No transcript generated yet")
+
+    old_pattern = f": {data.old_name}: "
+    new_pattern = f": {data.new_name}: "
+    meeting.transcript = meeting.transcript.replace(old_pattern, new_pattern)
+    meeting.mom = generate_mom(meeting.title, meeting.transcript)
+    
+    session.add(meeting)
+    session.commit()
+    session.refresh(meeting)
+    return meeting
+
+

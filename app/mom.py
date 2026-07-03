@@ -1,7 +1,41 @@
 import re
+import json
+import urllib.request
+from app.config import settings
 
 
 def generate_mom(title: str, transcript: str) -> str:
+    # Try using Gemini API if key is available
+    api_key = settings.gemini_api_key
+    if not api_key:
+        import os
+        api_key = os.environ.get("GEMINI_API_KEY", "")
+
+    if api_key:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+            prompt = (
+                f"You are an AI meeting assistant. Generate a professional Minutes of Meeting (MOM) "
+                f"for the meeting titled '{title}'. Use markdown formatting. Provide the following sections:\n"
+                f"1. Overview & Summary (a nice narrative of the meeting)\n"
+                f"2. Key Decisions (bullet points of agreed items)\n"
+                f"3. Action Items (formatted as: - Owner: [Name] | Task: [Task] | Due: [Date])\n"
+                f"4. Risks & Blockers (any concerns raised)\n"
+                f"5. Follow-ups (topics to verify or clarify later)\n\n"
+                f"Meeting Transcript:\n{transcript}"
+            )
+            req = urllib.request.Request(
+                url,
+                data=json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=15) as response:
+                res_data = json.loads(response.read().decode("utf-8"))
+                return res_data["candidates"][0]["content"]["parts"][0]["text"]
+        except Exception:
+            pass  # Fallback to local heuristic
+
     lines = [x.strip() for x in transcript.splitlines() if x.strip()]
     utterances = [clean_line(x) for x in lines]
     utterances = [x for x in utterances if x]

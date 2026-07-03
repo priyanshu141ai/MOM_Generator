@@ -3,38 +3,197 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MOM Bot</title>
+  <title>Read.ai Meeting Assistant</title>
   <link rel="stylesheet" href="/static/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
   <aside>
-    <h1>MOM Bot</h1>
-    <nav><button class="active">Meetings</button><button>Calendar</button><button>Email</button></nav>
+    <h1><span>🤖</span> Read.ai Local</h1>
+    <nav>
+      <button class="active" id="navMeetings">📂 Meetings</button>
+      <button id="navSearch">🔍 Search Copilot</button>
+      <button id="navCalendar">📅 Calendar Sync</button>
+    </nav>
   </aside>
+  
   <main>
-    <header><div><h2>Meetings</h2><p>Record, transcribe, generate MOM, and email follow-ups.</p></div><div><button id="calendarBtn">Connect Calendar</button><button id="importBtn">Import</button><button id="dueBtn">Run Due</button><a href="/docs">API Docs</a></div></header>
-    <section class="grid">
-      <form id="meetingForm">
-        <h3>New meeting</h3>
-        <input name="title" placeholder="Title" required>
-        <select name="platform"><option value="google_meet">Google Meet</option><option value="zoom">Zoom</option><option value="teams">Teams</option></select>
-        <input name="meeting_url" placeholder="Meeting URL" required>
-        <input name="recipient_email" type="email" placeholder="Recipient email" required>
-        <input name="starts_at" type="datetime-local">
-        <button>Create</button>
-      </form>
-      <section class="panel">
-        <div class="panelTop"><h3>Meetings</h3><button id="refreshBtn">Refresh</button></div>
-        <table><thead><tr><th>ID</th><th>Title</th><th>Platform</th><th>Status</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+    <!-- View 1: Meetings -->
+    <div id="viewMeetings" class="view-panel">
+      <header>
+        <div>
+          <h2>Meetings Analytics</h2>
+          <p>Record, diarize, and generate insights automatically.</p>
+        </div>
+        <div class="header-actions">
+          <button id="refreshBtn" class="secondary">🔄 Refresh</button>
+        </div>
+      </header>
+
+      <section class="grid">
+        <form id="meetingForm" class="card">
+          <h3>➕ New Meeting</h3>
+          <div class="form-group">
+            <label>Meeting Title</label>
+            <input name="title" placeholder="e.g. Product Sync" required>
+          </div>
+          <div class="form-group">
+            <label>Platform</label>
+            <select name="platform">
+              <option value="google_meet">Google Meet</option>
+              <option value="zoom">Zoom</option>
+              <option value="teams">Microsoft Teams</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Meeting URL</label>
+            <input name="meeting_url" placeholder="https://meet.google.com/..." required>
+          </div>
+          <div class="form-group">
+            <label>Recipient Email</label>
+            <input name="recipient_email" type="email" placeholder="client@example.com" required>
+          </div>
+          <div class="form-group">
+            <label>Scheduled Start</label>
+            <input name="starts_at" type="datetime-local">
+          </div>
+          <button style="width: 100%; justify-content: center;">Create Meeting</button>
+        </form>
+
+        <section class="card">
+          <div class="panelTop">
+            <h3>Recent Meetings</h3>
+          </div>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Title</th>
+                  <th>Platform</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="rows">
+                <!-- Dynamic rows -->
+              </tbody>
+            </table>
+          </div>
+        </section>
       </section>
-    </section>
-    <section class="detail">
-      <div class="panelTop"><h3 id="detailTitle">MOM</h3><div><button id="recordBtn">Record</button><button id="transcribeBtn">Transcribe</button><button id="diarizeBtn">Diarize</button><button id="sendBtn">Send Email</button></div></div>
-      <label class="upload">Upload audio <input id="audioInput" type="file" accept="audio/*,video/*"></label>
-      <div class="tabs"><button class="active" data-tab="mom">MOM</button><button data-tab="transcript">Transcript</button></div>
-      <pre id="momBox">Select a meeting.</pre>
-    </section>
+
+      <!-- Detail Workspace -->
+      <section class="detail" id="meetingDetailSection" style="display: none;">
+        <div class="detail-header">
+          <h3 id="detailTitle" style="font-size: 20px; font-weight: 700; color: white;">Meeting Overview</h3>
+          <div class="detail-actions">
+            <button id="recordBtn" class="secondary">⏺️ Record (60s)</button>
+            <button id="transcribeBtn" class="secondary">🎙️ Transcribe</button>
+            <button id="diarizeBtn" class="secondary">👥 Diarize</button>
+            <button id="sendBtn">✉️ Email MOM</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+          <div class="tabs">
+            <button class="active" data-tab="dashboard">📊 Dashboard</button>
+            <button data-tab="mom">📝 Summary & MOM</button>
+            <button data-tab="transcript">💬 Transcript</button>
+            <button data-tab="coach">🎓 Speaker Coach</button>
+          </div>
+          <label class="upload">
+            📥 Upload Audio/Video
+            <input id="audioInput" type="file" accept="audio/*,video/*">
+          </label>
+        </div>
+
+        <!-- TAB CONTENT: Dashboard -->
+        <div id="tab-dashboard" class="tab-content active">
+          <div class="analytics-summary-grid">
+            <div class="stat-card">
+              <h4>Engagement Score</h4>
+              <div class="stat-value" id="statEngagement">85%</div>
+            </div>
+            <div class="stat-card">
+              <h4>Meeting Sentiment</h4>
+              <div class="stat-value" id="statSentiment">Positive</div>
+            </div>
+            <div class="stat-card">
+              <h4>Total Speakers</h4>
+              <div class="stat-value" id="statSpeakers">2</div>
+            </div>
+          </div>
+          <div class="card" style="background: var(--bg-primary);">
+            <h4 style="margin-bottom: 16px; font-size: 15px; color: #a5b4fc;">Talk-Time Distribution</h4>
+            <div id="talkTimeContainer" style="display: flex; flex-direction: column; gap: 16px;">
+              <!-- Dynamic bars -->
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB CONTENT: MOM -->
+        <div id="tab-mom" class="tab-content">
+          <div class="card" style="background: var(--bg-primary);">
+            <div id="momBox" class="mom-container">Select a meeting.</div>
+          </div>
+        </div>
+
+        <!-- TAB CONTENT: Transcript -->
+        <div id="tab-transcript" class="tab-content">
+          <div id="transcriptBox" style="display: flex; flex-direction: column; gap: 12px; max-height: 500px; overflow-y: auto; padding-right: 8px;">
+            <!-- Dynamic transcript bubbles -->
+          </div>
+        </div>
+
+        <!-- TAB CONTENT: Speaker Coach -->
+        <div id="tab-coach" class="tab-content">
+          <div class="speaker-coach-grid" id="coachGrid">
+            <!-- Dynamic speaker coaching cards -->
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- View 2: Search Copilot -->
+    <div id="viewSearch" class="view-panel" style="display: none;">
+      <header>
+        <div>
+          <h2>Search Copilot</h2>
+          <p>Search across your entire local database of meetings, transcripts, and action items.</p>
+        </div>
+      </header>
+      <div class="card search-container">
+        <div class="form-group" style="display: flex; gap: 12px; margin-bottom: 0;">
+          <input id="searchInput" placeholder="Search keywords (e.g. 'decision', 'action', 'milestone', project details)..." style="flex: 1; margin-bottom: 0;">
+          <button id="searchBtn">🔍 Search</button>
+        </div>
+      </div>
+      <div id="searchResults" class="search-results">
+        <!-- Dynamic search cards -->
+      </div>
+    </div>
+
+    <!-- View 3: Calendar Sync -->
+    <div id="viewCalendar" class="view-panel" style="display: none;">
+      <header>
+        <div>
+          <h2>Google Calendar Integration</h2>
+          <p>Import scheduled meetings to record and analyze them automatically.</p>
+        </div>
+      </header>
+      <div class="card" style="max-width: 600px;">
+        <h3 style="margin-bottom: 16px;">Google Connection Status</h3>
+        <div id="calendarStatusText" style="margin-bottom: 24px; font-size: 15px; color: var(--text-secondary);">Checking status...</div>
+        <div style="display: flex; gap: 12px;">
+          <button id="calendarBtn">🔗 Connect Google Account</button>
+          <button id="importBtn" class="secondary">📥 Import Next 7 Days</button>
+          <button id="dueBtn" class="secondary">⚡ Run Due Meetings</button>
+        </div>
+      </div>
+    </div>
   </main>
+
   <script src="/static/app.js"></script>
 </body>
 </html>
