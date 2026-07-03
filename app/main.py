@@ -3,7 +3,7 @@ from pathlib import Path
 from fastapi import BackgroundTasks, Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from sqlmodel import Session, select
+from sqlmodel import SQLModel, Session, select
 
 from app.config import settings
 from app.calendar_google import auth_url, google_configured, import_google_meetings, save_callback_token
